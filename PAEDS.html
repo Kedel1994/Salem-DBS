@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>PAEDS — Plateforme Administrative Église de Dieu Salem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy-950:#070b16;
+  --navy-900:#0c1326;
+  --navy-800:#121b36;
+  --navy-700:#1a2547;
+  --navy-600:#243161;
+  --navy-border:#27315a;
+  --gold:#d4af37;
+  --gold-bright:#f0cc5e;
+  --gold-dim:#9c7f2c;
+  --ink:#e9ecf5;
+  --ink-dim:#9aa3c0;
+  --ink-faint:#6b7393;
+  --ok:#3fb97f;
+  --warn:#e0a432;
+  --danger:#e0584f;
+  --radius:14px;
+  --shadow:0 12px 32px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:radial-gradient(ellipse at top right, #101b3a 0%, var(--navy-950) 55%);
+  color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh;
+  -webkit-tap-highlight-color:transparent;
+}
+h1,h2,h3,.font-display{font-family:'Playfair Display',serif;}
+a{color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:var(--navy-600);border-radius:8px;}
+
+/* ---------- Loading ---------- */
+#loadingScreen{
+  position:fixed;inset:0;background:var(--navy-950);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:9999;
+}
+.crest{
+  width:64px;height:64px;border-radius:50%;
+  border:2px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-weight:800;font-size:26px;color:var(--gold);
+  animation:pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,175,55,.35)}50%{box-shadow:0 0 0 14px rgba(212,175,55,0)}}
+.loading-label{color:var(--ink-dim);font-size:13px;letter-spacing:.12em;text-transform:uppercase;}
+
+/* ---------- Auth screen ---------- */
+#authScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.auth-card{
+  width:100%;max-width:420px;background:linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  border:1px solid var(--navy-border);border-radius:var(--radius);padding:36px 28px;box-shadow:var(--shadow);
+  position:relative;overflow:hidden;
+}
+.auth-card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+.auth-head{text-align:center;margin-bottom:28px;}
+.auth-head .crest{margin:0 auto 14px;}
+.auth-head h1{font-size:21px;color:var(--ink);margin:0 0 4px;letter-spacing:.01em;}
+.auth-head p{font-size:12.5px;color:var(--ink-faint);margin:0;letter-spacing:.06em;text-transform:uppercase;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:12px;color:var(--ink-dim);margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase;}
+.field input,.field select,.field textarea{
+  width:100%;padding:12px 14px;background:var(--navy-700);border:1px solid var(--navy-border);
+  border-radius:10px;color:var(--ink);font-size:14.5px;outline:none;transition:border-color .15s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold-dim);}
+.field textarea{resize:vertical;min-height:80px;}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 18px;border-radius:10px;border:none;font-weight:600;font-size:14px;letter-spacing:.01em;
+  transition:transform .12s, box-shadow .12s, opacity .12s;
+}
+.btn:active{transform:scale(.97);}
+.btn-gold{background:linear-gradient(135deg,var(--gold-bright),var(--gold-dim));color:#1a1505;box-shadow:0 6px 16px rgba(212,175,55,.25);}
+.btn-ghost{background:transparent;border:1px solid var(--navy-border);color:var(--ink-dim);}
+.btn-block{width:100%;}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-sm{padding:8px 12px;font-size:12.5px;border-radius:8px;}
+.auth-error{
+  background:rgba(224,88,79,.12);border:1px solid rgba(224,88,79,.35);color:#f0a39c;
+  padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none;
+}
+.auth-foot{margin-top:18px;text-align:center;font-size:12px;color:var(--ink-faint);}
+
+/* ---------- App shell ---------- */
+#appShell{display:none;min-height:100vh;}
+.sidebar{
+  position:fixed;top:0;left:0;bottom:0;width:240px;background:var(--navy-900);
+  border-right:1px solid var(--navy-border);display:flex;flex-direction:column;z-index:50;
+  transition:transform .25s;
+}
+.sidebar-brand{padding:22px 18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--navy-border);}
+.sidebar-brand .crest{width:38px;height:38px;font-size:16px;}
+.sidebar-brand-text{line-height:1.2;}
+.sidebar-brand-text b{display:block;font-size:13.5px;color:var(--ink);font-family:'Playfair Display',serif;}
+.sidebar-brand-text span{font-size:10px;color:var(--ink-faint);letter-spacing:.08em;text-transform:uppercase;}
+.nav-group{padding:14px 10px;overflow-y:auto;flex:1;}
+.nav-label{font-size:10.5px;color:var(--ink-faint);letter-spacing:.1em;text-transform:uppercase;padding:10px 10px 6px;}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;
+  color:var(--ink-dim);font-size:13.5px;font-weight:500;margin-bottom:2px;cursor:pointer;
+  border:1px solid transparent;
+}
+.nav-item:hover{background:var(--navy-800);color:var(--ink);}
+.nav-item.active{background:rgba(212,175,55,.1);border-color:rgba(212,175,55,.3);color:var(--gold-bright);}
+.nav-item .ic{width:18px;text-align:center;font-size:15px;}
+.nav-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;}
+.sidebar-foot{padding:14px;border-top:1px solid var(--navy-border);}
+.user-chip{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;background:var(--navy-800);}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:var(--navy-600);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--gold);border:1px solid var(--gold-dim);flex-shrink:0;}
+.user-meta{line-height:1.25;overflow:hidden;}
+.user-meta b{display:block;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-meta span{font-size:10.5px;color:var(--ink-faint);}
+.logout-btn{margin-top:8px;width:100%;background:none;border:1px solid var(--navy-border);color:var(--ink-faint);padding:8px;border-radius:8px;font-size:12px;}
+
+.main{margin-left:240px;min-height:100vh;}
+.topbar{
+  position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:14px;
+  padding:14px 24px;background:rgba(7,11,22,.85);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--navy-border);
+}
+.menu-toggle{display:none;background:none;border:1px solid var(--navy-border);color:var(--ink);width:36px;height:36px;border-radius:8px;font-size:16px;}
+.topbar h2{font-size:18px;margin:0;color:var(--ink);flex:1;}
+.topbar .search-mini{position:relative;}
+.topbar .search-mini input{
+  background:var(--navy-800);border:1px solid var(--navy-border);border-radius:9px;
+  padding:9px 12px 9px 32px;color:var(--ink);font-size:13px;width:200px;
+}
+.topbar .search-mini .ic{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-size:13px;}
+.icon-btn{width:38px;height:38px;border-radius:9px;background:var(--navy-800);border:1px solid var(--navy-border);color:var(--ink-dim);position:relative;font-size:15px;}
+.icon-btn .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--danger);display:none;}
+
+.content{padding:22px 24px 60px;max-width:1320px;}
+.view{display:none;}
+.view.active{display:block;animation:fadein .25s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;}
+#ministryGrid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));}
+.stat-card{
+  background:linear-gradient(165deg,var(--navy-800),var(--navy-900));border:1px solid var(--navy-border);
+  border-radius:var(--radius);padding:18px;position:relative;overflow:hidden;
+}
+.stat-card .num{font-family:'Playfair Display',serif;font-size:30px;color:var(--gold-bright);font-weight:700;line-height:1;}
+.stat-card .lbl{font-size:12px;color:var(--ink-dim);margin-top:8px;}
+.stat-card .ic{position:absolute;right:14px;top:14px;font-size:20px;opacity:.25;}
+
+.panel{
+  background:linear-gradient(165deg,var(--navy-800),var(--navy-900));border:1px solid var(--navy-border);
+  border-radius:var(--radius);padding:20px;margin-bottom:18px;
+}
+.panel-head{display:flex;align-items:center;justify-content:between;gap:10px;margin-bottom:16px;}
+.panel-head h3{font-size:15.5px;margin:0;flex:1;color:var(--ink);}
+.panel-head .panel-sub{font-size:12px;color:var(--ink-faint);}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;color:var(--ink-faint);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid var(--navy-border);}
+td{padding:10px;border-bottom:1px solid rgba(39,49,90,.5);color:var(--ink-dim);}
+tr:hover td{background:rgba(255,255,255,.02);}
+.table-wrap{overflow-x:auto;}
+
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-ok{background:rgba(63,185,127,.15);color:var(--ok);}
+.badge-warn{background:rgba(224,164,50,.15);color:var(--warn);}
+.badge-danger{background:rgba(224,88,79,.15);color:var(--danger);}
+.badge-gold{background:rgba(212,175,55,.15);color:var(--gold-bright);}
+.badge-mute{background:var(--navy-700);color:var(--ink-faint);}
+
+.empty-state{text-align:center;padding:50px 20px;color:var(--ink-faint);}
+.empty-state .ic{font-size:36px;margin-bottom:10px;opacity:.5;}
+.empty-state p{font-size:13px;margin:4px 0 0;}
+
+.fab{position:fixed;bottom:24px;right:24px;z-index:30;}
+
+/* Modal */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(4,6,14,.7);backdrop-filter:blur(3px);
+  display:none;align-items:flex-start;justify-content:center;z-index:200;padding:30px 16px;overflow-y:auto;
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  width:100%;max-width:560px;background:linear-gradient(180deg,var(--navy-800),var(--navy-900));
+  border:1px solid var(--navy-border);border-radius:var(--radius);box-shadow:var(--shadow);
+  margin:auto;
+}
+.modal-head{display:flex;align-items:center;gap:10px;padding:18px 20px;border-bottom:1px solid var(--navy-border);}
+.modal-head h3{margin:0;font-size:16px;flex:1;}
+.modal-close{background:none;border:none;color:var(--ink-faint);font-size:20px;width:30px;height:30px;}
+.modal-body{padding:20px;max-height:70vh;overflow-y:auto;}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;border-top:1px solid var(--navy-border);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
+@media(max-width:480px){.grid2{grid-template-columns:1fr;}}
+
+.toast-stack{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:500;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.toast{background:var(--navy-700);border:1px solid var(--navy-border);color:var(--ink);padding:11px 18px;border-radius:10px;font-size:13px;box-shadow:var(--shadow);animation:toastin .2s ease;}
+.toast.ok{border-color:rgba(63,185,127,.4);}
+.toast.err{border-color:rgba(224,88,79,.4);}
+@keyframes toastin{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+.tag-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.tag-filter{padding:6px 13px;border-radius:20px;font-size:12px;border:1px solid var(--navy-border);color:var(--ink-dim);background:var(--navy-800);}
+.tag-filter.active{background:rgba(212,175,55,.15);border-color:var(--gold-dim);color:var(--gold-bright);}
+
+.print-only{display:none;}
+@media print{
+  body *{visibility:hidden;}
+  #printArea,#printArea *{visibility:visible;}
+  #printArea{position:absolute;top:0;left:0;width:100%;padding:30px;background:#fff;color:#000;}
+}
+
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:none;}
+  .main{margin-left:0;}
+  .menu-toggle{display:inline-flex;align-items:center;justify-content:center;}
+  .topbar .search-mini{display:none;}
+}
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45;}
+.scrim.open{display:block;}
+
+.helper{font-size:11.5px;color:var(--ink-faint);margin-top:5px;}
+hr.sep{border:none;border-top:1px solid var(--navy-border);margin:16px 0;}
+</style>
+</head>
+<body>
+
+<div id="loadingScreen">
+  <div class="crest">PS</div>
+  <div class="loading-label">Chargement de PAEDS…</div>
+</div>
+
+<!-- AUTH -->
+<div id="authScreen" style="display:none;">
+  <div class="auth-card">
+    <div class="auth-head">
+      <div class="crest">PS</div>
+      <h1>PAEDS</h1>
+      <p>Église de Dieu Salem · Plateforme Administrative</p>
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <div class="field">
+      <label>Identifiant (email)</label>
+      <input type="email" id="loginEmail" placeholder="nom@eglisesalem.org" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Mot de passe</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-gold btn-block" id="loginBtn" onclick="doLogin()">Se connecter</button>
+    <div class="auth-foot">Accès réservé à l'administration, au pasteur et aux responsables de ministère.</div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="appShell">
+  <div class="scrim" id="scrim" onclick="toggleSidebar(false)"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="crest">PS</div>
+      <div class="sidebar-brand-text"><b>PAEDS</b><span>Église de Dieu Salem</span></div>
+    </div>
+    <div class="nav-group" id="navGroup"></div>
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="user-avatar" id="userAvatar">--</div>
+        <div class="user-meta"><b id="userName">—</b><span id="userRole">—</span></div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Déconnexion</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="menu-toggle" onclick="toggleSidebar(true)">☰</button>
+      <h2 id="viewTitle">Tableau de bord</h2>
+      <div class="search-mini"><span class="ic">⌕</span><input type="text" id="globalSearch" placeholder="Rechercher…" oninput="runGlobalSearch(this.value)"></div>
+      <button class="icon-btn" onclick="navTo('publications')" title="Publications">🔔<span class="dot" id="notifDot"></span></button>
+    </div>
+    <div class="content" id="contentArea"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalBox"></div></div>
+<div class="toast-stack" id="toastStack"></div>
+<div id="printArea" class="print-only"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script>
+/* ====================== FIREBASE INIT ====================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyBjmJHuNe0GjblwBrP1Rakqr9HgZcfgYT8",
+  authDomain: "salem-dbs.firebaseapp.com",
+  databaseURL: "https://salem-dbs-default-rtdb.firebaseio.com",
+  projectId: "salem-dbs",
+  storageBucket: "salem-dbs.firebasestorage.app",
+  messagingSenderId: "1018849656489",
+  appId: "1:1018849656489:web:283f7174c426a7302373b8"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+const ROOT = "paeds"; // racine dédiée pour isoler PAEDS du reste du projet salem-dbs
+const R = (path) => db.ref(`${ROOT}/${path}`);
+
+let currentUser = null;   // {uid, email}
+let currentProfile = null; // {role, nom, ministereId, ...}
+let currentView = "dashboard";
+let unsubscribers = [];
+
+/* ====================== UTIL ====================== */
+function toast(msg, type){
+  const stack = document.getElementById('toastStack');
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type||'');
+  t.textContent = msg;
+  stack.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3200);
+}
+function uid(prefix){ return (prefix||'id') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function fmtDate(iso){ if(!iso) return '—'; const d=new Date(iso); return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}); }
+function fmtDateTime(iso){ if(!iso) return '—'; const d=new Date(iso); return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+function fmtMoney(n){ if(n===undefined||n===null||n==='') return '—'; return Number(n).toLocaleString('fr-FR')+' G'; }
+function esc(s){ return (s===undefined||s===null)?'':String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function initials(name){ if(!name) return '--'; return name.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+function genPassword(){ const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; let p=''; for(let i=0;i<10;i++) p+=chars[Math.floor(Math.random()*chars.length)]; return p; }
+function slugify(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
+
+function logAction(action, details){
+  R('journal').push({ action, details: details||'', uid: currentUser?currentUser.uid:'system', nom: currentProfile?currentProfile.nom:'système', ts: Date.now() });
+}
+
+/* ====================== FILE D'ATTENTE WHATSAPP ====================== */
+// Chaque événement important pousse un message dans paeds/notifications_whatsapp/.
+// L'administrateur peut copier/envoyer manuellement chaque message, ou configurer
+// un webhook (Cloud Function, Make.com, Zapier, etc.) qui lira cette file et enverra
+// automatiquement via l'API WhatsApp Business. Voir DEPLOIEMENT.md pour les options.
+async function queueWhatsApp(destinataireNom, telephone, message, type){
+  const entry = {
+    destinataireNom: destinataireNom || '—', telephone: telephone || '', message, type,
+    statut: 'en_attente', createdAt: Date.now()
+  };
+  const ref = await R('notifications_whatsapp').push(entry);
+  // Tentative d'envoi automatique si un webhook est configuré (facultatif, échoue silencieusement)
+  try{
+    const cfgSnap = await R('config/whatsappWebhookUrl').once('value');
+    const url = cfgSnap.val();
+    if(url){
+      fetch(url, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({telephone, message, type, id: ref.key})
+      }).then(()=> ref.update({statut:'envoye_auto'})).catch(()=>{});
+    }
+  }catch(e){ /* pas de config webhook, message reste en file pour envoi manuel */ }
+}
+
+/* Vérifie les mandats du comité arrivant à expiration (30/15/7/1/0 jours) et met en file
+   une notification unique par palier grâce au champ notifiedMilestones stocké sur le membre. */
+async function checkMandateExpirations(){
+  if(!isAdmin() && !isPasteur()) return;
+  const snap = await R('membres').once('value');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const paliers = [30,15,7,1,0];
+  snap.forEach(c=>{
+    const m = c.val();
+    if(m.categorie !== 'comite' || !m.dateFin) return;
+    const fin = new Date(m.dateFin); fin.setHours(0,0,0,0);
+    const joursRestants = Math.round((fin-today)/86400000);
+    if(!paliers.includes(joursRestants)) return;
+    const deja = m.notifiedMilestones || {};
+    if(deja[joursRestants]) return;
+    const label = joursRestants===0 ? 'Fin de mandat aujourd\'hui' : `Mandat expire dans ${joursRestants} jour(s)`;
+    const msg = `Bonjour, ${label} pour ${m.prenom||''} ${m.nom} (${m.fonction}). Veuillez vous connecter à PAEDS pour la suite.`;
+    queueWhatsApp('Comité — '+m.fonction, '', msg, 'fin_mandat');
+    R('membres/'+c.key+'/notifiedMilestones/'+joursRestants).set(true);
+  });
+}
+
+/* ====================== AUTH ====================== */
+auth.onAuthStateChanged(async (user)=>{
+  document.getElementById('loadingScreen').style.display='none';
+  if(user){
+    currentUser = user;
+    const snap = await R('users/'+user.uid).once('value');
+    if(!snap.exists()){
+      showAuthError("Compte non reconnu dans PAEDS. Contactez l'administrateur.");
+      auth.signOut();
+      return;
+    }
+    currentProfile = snap.val();
+    if(currentProfile.statut === 'suspendu'){
+      showAuthError("Ce compte a été suspendu. Contactez l'administrateur.");
+      auth.signOut();
+      return;
+    }
+    document.getElementById('authScreen').style.display='none';
+    document.getElementById('appShell').style.display='block';
+    initAppShell();
+  } else {
+    currentUser = null; currentProfile = null;
+    document.getElementById('authScreen').style.display='flex';
+    document.getElementById('appShell').style.display='none';
+  }
+});
+
+function showAuthError(msg){
+  const el = document.getElementById('authError');
+  el.textContent = msg; el.style.display = 'block';
+}
+function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('authError');
+  errEl.style.display='none';
+  if(!email || !pwd){ showAuthError("Veuillez remplir tous les champs."); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.textContent='Connexion…'; btn.disabled=true;
+  auth.signInWithEmailAndPassword(email,pwd)
+    .catch(err=>{
+      let msg = "Identifiants incorrects.";
+      if(err.code==='auth/user-not-found') msg="Aucun compte avec cet email.";
+      if(err.code==='auth/wrong-password') msg="Mot de passe incorrect.";
+      if(err.code==='auth/too-many-requests') msg="Trop de tentatives. Réessayez plus tard.";
+      if(err.code==='auth/invalid-email') msg="Format d'email invalide.";
+      showAuthError(msg);
+    })
+    .finally(()=>{ btn.textContent='Se connecter'; btn.disabled=false; });
+}
+function doLogout(){
+  unsubscribers.forEach(u=>u());
+  unsubscribers=[];
+  auth.signOut();
+}
+
+/* ====================== SIDEBAR / NAV ====================== */
+function toggleSidebar(open){
+  document.getElementById('sidebar').classList.toggle('open',open);
+  document.getElementById('scrim').classList.toggle('open',open);
+}
+
+const NAV_CONFIG = {
+  admin: [
+    {group:'Vue d\'ensemble', items:[
+      {id:'dashboard', label:'Tableau de bord', icon:'◈'},
+    ]},
+    {group:'Gestion', items:[
+      {id:'ministeres', label:'Ministères', icon:'⛪'},
+      {id:'membres', label:'Membres & Comités', icon:'👥'},
+      {id:'activites', label:'Activités', icon:'📋'},
+      {id:'financements', label:'Financements', icon:'💰'},
+      {id:'rapports', label:'Rapports', icon:'📄'},
+      {id:'calendrier', label:'Calendrier', icon:'📅'},
+    ]},
+    {group:'Communication', items:[
+      {id:'publications', label:'Publications', icon:'📢'},
+      {id:'rencontres', label:'Rencontres', icon:'🤝'},
+    ]},
+    {group:'Système', items:[
+      {id:'notifications', label:'Notifications WhatsApp', icon:'💬'},
+      {id:'journal', label:'Journal d\'audit', icon:'🛡'},
+    ]},
+  ],
+  pasteur: [
+    {group:'Vue d\'ensemble', items:[{id:'dashboard', label:'Tableau de bord', icon:'◈'}]},
+    {group:'Supervision', items:[
+      {id:'activites', label:'Activités', icon:'📋'},
+      {id:'financements', label:'Financements', icon:'💰'},
+      {id:'rapports', label:'Rapports', icon:'📄'},
+      {id:'ministeres', label:'Ministères', icon:'⛪'},
+      {id:'calendrier', label:'Calendrier', icon:'📅'},
+    ]},
+    {group:'Communication', items:[
+      {id:'publications', label:'Publications', icon:'📢'},
+      {id:'rencontres', label:'Rencontres', icon:'🤝'},
+    ]},
+  ],
+  responsable: [
+    {group:'Mon ministère', items:[
+      {id:'dashboard', label:'Tableau de bord', icon:'◈'},
+      {id:'activites', label:'Activités', icon:'📋'},
+      {id:'financements', label:'Financements', icon:'💰'},
+      {id:'rapports', label:'Rapports', icon:'📄'},
+      {id:'membres', label:'Membres & Comité', icon:'👥'},
+      {id:'calendrier', label:'Calendrier', icon:'📅'},
+    ]},
+    {group:'Communication', items:[
+      {id:'publications', label:'Publications', icon:'📢'},
+      {id:'rencontres', label:'Rencontres', icon:'🤝'},
+    ]},
+  ]
+};
+
+function initAppShell(){
+  document.getElementById('userName').textContent = currentProfile.nom || currentUser.email;
+  document.getElementById('userRole').textContent = roleLabel(currentProfile.role);
+  document.getElementById('userAvatar').textContent = initials(currentProfile.nom||currentUser.email);
+  buildNav();
+  navTo('dashboard');
+  watchNotifBadge();
+  checkMandateExpirations();
+}
+function roleLabel(r){ return {admin:'Administrateur', pasteur:'Pasteur', responsable:'Responsable de ministère'}[r] || r; }
+
+function buildNav(){
+  const cfg = NAV_CONFIG[currentProfile.role] || NAV_CONFIG.responsable;
+  const el = document.getElementById('navGroup');
+  el.innerHTML = cfg.map(g=>`
+    <div class="nav-label">${g.group}</div>
+    ${g.items.map(it=>`<div class="nav-item" data-nav="${it.id}" onclick="navTo('${it.id}')"><span class="ic">${it.icon}</span>${it.label}</div>`).join('')}
+  `).join('');
+}
+
+function navTo(view){
+  currentView = view;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.nav===view));
+  toggleSidebar(false);
+  const titles = {dashboard:'Tableau de bord', ministeres:'Gestion des ministères', membres:'Membres & Comités',
+    activites:'Activités', financements:'Demandes de financement', rapports:'Rapports d\'activité',
+    calendrier:'Calendrier annuel', publications:'Publications', rencontres:'Rencontres', journal:'Journal d\'audit',
+    notifications:'Notifications WhatsApp'};
+  document.getElementById('viewTitle').textContent = titles[view] || view;
+  const fn = window['render_'+view];
+  if(typeof fn === 'function'){ fn(); } else { document.getElementById('contentArea').innerHTML = '<div class="empty-state"><div class="ic">⚒</div><p>Module en construction.</p></div>'; }
+}
+
+/* ====================== MODAL HELPERS ====================== */
+function openModal(html){
+  document.getElementById('modalBox').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.getElementById('modalBox').innerHTML = '';
+}
+document.getElementById('modalOverlay').addEventListener('click', e=>{ if(e.target.id==='modalOverlay') closeModal(); });
+
+/* ====================== GLOBAL SEARCH ====================== */
+let searchTimer=null;
+async function runGlobalSearch(q){
+  clearTimeout(searchTimer);
+  if(!q || q.length<2) return;
+  searchTimer = setTimeout(async ()=>{
+    const [minSnap, actSnap, memSnap, repSnap] = await Promise.all([
+      R('ministeres').once('value'), R('activites').once('value'), R('membres').once('value'), R('rapports').once('value')
+    ]);
+    const results = [];
+    const ql = q.toLowerCase();
+    minSnap.forEach(c=>{ const v=c.val(); if((v.nom||'').toLowerCase().includes(ql)) results.push({type:'Ministère',label:v.nom,go:()=>navTo('ministeres')}); });
+    actSnap.forEach(c=>{ const v=c.val(); if((v.titre||'').toLowerCase().includes(ql)) results.push({type:'Activité',label:v.titre,go:()=>navTo('activites')}); });
+    memSnap.forEach(c=>{ const v=c.val(); if(((v.nom||'')+' '+(v.prenom||'')).toLowerCase().includes(ql)) results.push({type:'Membre',label:(v.prenom||'')+' '+(v.nom||''),go:()=>navTo('membres')}); });
+    repSnap.forEach(c=>{ const v=c.val(); if((v.nom||'').toLowerCase().includes(ql)) results.push({type:'Rapport',label:v.nom,go:()=>navTo('rapports')}); });
+    showSearchResults(results.slice(0,8));
+  }, 350);
+}
+function showSearchResults(results){
+  let existing = document.getElementById('searchDropdown');
+  if(existing) existing.remove();
+  if(!results.length) return;
+  const wrap = document.querySelector('.search-mini');
+  const dd = document.createElement('div');
+  dd.id = 'searchDropdown';
+  dd.style.cssText = 'position:absolute;top:42px;right:0;width:260px;background:var(--navy-800);border:1px solid var(--navy-border);border-radius:10px;box-shadow:var(--shadow);z-index:60;overflow:hidden;';
+  dd.innerHTML = results.map(r=>`<div style="padding:10px 12px;border-bottom:1px solid var(--navy-border);cursor:pointer;font-size:12.5px;" onmousedown="(${r.go.toString()})(); document.getElementById('searchDropdown')?.remove();"><span style="color:var(--gold-bright);font-size:10px;text-transform:uppercase;letter-spacing:.05em;">${r.type}</span><div style="color:var(--ink);margin-top:2px;">${esc(r.label)}</div></div>`).join('');
+  wrap.appendChild(dd);
+}
+
+/* ====================== NOTIFICATION BADGE (mandats / rapports en attente) ====================== */
+function watchNotifBadge(){
+  R('rapports').orderByChild('statut').equalTo('soumis').on('value', snap=>{
+    document.getElementById('notifDot').style.display = snap.exists() ? 'block' : 'none';
+  });
+}
+
+/* ====================== HELPERS RÔLE ====================== */
+function isAdmin(){ return currentProfile && currentProfile.role==='admin'; }
+function isPasteur(){ return currentProfile && currentProfile.role==='pasteur'; }
+function isResponsable(){ return currentProfile && currentProfile.role==='responsable'; }
+function canSeeAll(){ return isAdmin() || isPasteur(); }
+function myMinistereId(){ return currentProfile ? currentProfile.ministereId : null; }
+
+/* ====================== DASHBOARD ====================== */
+async function render_dashboard(){
+  const el = document.getElementById('contentArea');
+  el.innerHTML = '<div class="empty-state"><div class="ic">◈</div><p>Chargement…</p></div>';
+
+  const [minSnap, actSnap, repSnap, finSnap, pubSnap] = await Promise.all([
+    R('ministeres').once('value'), R('activites').once('value'), R('rapports').once('value'),
+    R('financements').once('value'), R('publications').once('value')
+  ]);
+
+  let ministeres=[], activites=[], rapports=[], financements=[], publications=[];
+  minSnap.forEach(c=>ministeres.push({id:c.key,...c.val()}));
+  actSnap.forEach(c=>activites.push({id:c.key,...c.val()}));
+  repSnap.forEach(c=>rapports.push({id:c.key,...c.val()}));
+  finSnap.forEach(c=>financements.push({id:c.key,...c.val()}));
+  pubSnap.forEach(c=>publications.push({id:c.key,...c.val()}));
+
+  if(!canSeeAll()){
+    const mid = myMinistereId();
+    activites = activites.filter(a=>a.ministereId===mid);
+    rapports = rapports.filter(r=>r.ministereId===mid);
+    financements = financements.filter(f=>f.ministereId===mid);
+  }
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayStr = today.toISOString().slice(0,10);
+  const activitesAVenir = activites.filter(a=>a.date===todayStr && a.statut!=='annulee');
+  const activitesEnCours = activites.filter(a=>a.statut==='planifiee' || a.statut==='en_cours');
+  const activitesRealisees = activites.filter(a=>a.statut==='terminee');
+  const rapportsAttente = rapports.filter(r=>r.statut==='soumis');
+  const demandesFinancement = financements.filter(f=>f.statut==='en_attente');
+  const pubRecentes = publications.slice(-3).reverse();
+
+  let statsHtml = '';
+  if(canSeeAll()){
+    statsHtml = `
+      <div class="stat-grid">
+        <div class="stat-card"><span class="ic">⛪</span><div class="num">${ministeres.length}</div><div class="lbl">Ministères</div></div>
+        <div class="stat-card"><span class="ic">📋</span><div class="num">${activitesEnCours.length}</div><div class="lbl">Activités en cours</div></div>
+        <div class="stat-card"><span class="ic">✓</span><div class="num">${activitesRealisees.length}</div><div class="lbl">Activités réalisées</div></div>
+        <div class="stat-card"><span class="ic">📄</span><div class="num">${rapportsAttente.length}</div><div class="lbl">Rapports en attente</div></div>
+        <div class="stat-card"><span class="ic">📅</span><div class="num">${activitesAVenir.length}</div><div class="lbl">Activités aujourd'hui</div></div>
+        <div class="stat-card"><span class="ic">💰</span><div class="num">${demandesFinancement.length}</div><div class="lbl">Demandes de financement</div></div>
+      </div>`;
+  } else {
+    statsHtml = `
+      <div class="stat-grid">
+        <div class="stat-card"><span class="ic">📋</span><div class="num">${activitesEnCours.length}</div><div class="lbl">Activités en cours</div></div>
+        <div class="stat-card"><span class="ic">✓</span><div class="num">${activitesRealisees.length}</div><div class="lbl">Activités réalisées</div></div>
+        <div class="stat-card"><span class="ic">📄</span><div class="num">${rapportsAttente.length}</div><div class="lbl">Rapports en attente</div></div>
+        <div class="stat-card"><span class="ic">📅</span><div class="num">${activitesAVenir.length}</div><div class="lbl">Aujourd'hui</div></div>
+      </div>`;
+  }
+
+  el.innerHTML = `
+    ${statsHtml}
+    <div class="panel">
+      <div class="panel-head"><h3>Activités d'aujourd'hui</h3><span class="panel-sub">${fmtDate(todayStr)}</span></div>
+      ${activitesAVenir.length ? `<div class="table-wrap"><table><thead><tr><th>Titre</th><th>Type</th><th>Heure</th><th>Lieu</th><th>Statut</th></tr></thead><tbody>
+        ${activitesAVenir.map(a=>`<tr><td>${esc(a.titre)}</td><td>${esc(a.type)}</td><td>${esc(a.heure||'—')}</td><td>${esc(a.lieu||'—')}</td><td>${statutBadge(a.statut)}</td></tr>`).join('')}
+      </tbody></table></div>` : `<div class="empty-state"><div class="ic">📅</div><p>Aucune activité prévue aujourd'hui.</p></div>`}
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Publications récentes</h3></div>
+      ${pubRecentes.length ? pubRecentes.map(p=>`<div style="padding:10px 0;border-bottom:1px solid var(--navy-border);"><b style="color:var(--ink);font-size:13.5px;">${esc(p.titre)}</b><div style="color:var(--ink-faint);font-size:11.5px;margin-top:3px;">${esc(p.type||'Communiqué')} · ${fmtDate(p.date)}</div></div>`).join('') : `<div class="empty-state"><div class="ic">📢</div><p>Aucune publication récente.</p></div>`}
+    </div>
+  `;
+}
+
+function statutBadge(statut){
+  const map = {
+    planifiee:['badge-mute','Planifiée'], en_cours:['badge-warn','En cours'], terminee:['badge-ok','Terminée'],
+    reportee:['badge-warn','Reportée'], annulee:['badge-danger','Annulée'],
+    en_attente:['badge-warn','En attente'], approuve:['badge-ok','Approuvé'], refuse:['badge-danger','Refusé'], retourne:['badge-warn','Retourné'],
+    soumis:['badge-warn','Soumis'], actif:['badge-ok','Actif'], suspendu:['badge-danger','Suspendu'], passif:['badge-mute','Passif'],
+    decede:['badge-mute','Décédé'], transfere:['badge-mute','Transféré']
+  };
+  const [cls,label] = map[statut] || ['badge-mute', statut||'—'];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+/* ====================== MINISTÈRES ====================== */
+const MINISTRY_COLORS = ['#d4af37','#3fb97f','#5b8def','#e0584f','#b46fd1','#e0a432','#3fc4c4','#d16fa3'];
+
+async function render_ministeres(){
+  const el = document.getElementById('contentArea');
+  el.innerHTML = '<div class="empty-state"><p>Chargement…</p></div>';
+  const snap = await R('ministeres').once('value');
+  let list = [];
+  snap.forEach(c=>list.push({id:c.key,...c.val()}));
+  list.sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+      ${isAdmin() ? `<button class="btn btn-gold" onclick="openMinistryForm()">+ Enregistrer un ministère</button>` : ''}
+    </div>
+    <div class="stat-grid" id="ministryGrid">
+      ${list.length ? list.map(m=>ministryCardHtml(m)).join('') : `<div class="empty-state" style="grid-column:1/-1;"><div class="ic">⛪</div><p>Aucun ministère enregistré pour le moment.</p></div>`}
+    </div>
+  `;
+}
+
+function ministryCardHtml(m){
+  const color = m.couleur || '#d4af37';
+  return `
+  <div class="panel" style="margin-bottom:0;border-left:3px solid ${color};cursor:pointer;" onclick="openMinistryDetail('${m.id}')">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <div style="width:40px;height:40px;border-radius:10px;background:${color}22;border:1px solid ${color}55;display:flex;align-items:center;justify-content:center;font-weight:700;color:${color};">${initials(m.nom)}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;color:var(--ink);font-weight:600;line-height:1.3;">${esc(m.nom)}</div>
+        <div style="font-size:11.5px;color:var(--ink-faint);">${esc(m.responsable||'—')}</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--ink-dim);">${esc((m.description||'').slice(0,90))}${(m.description||'').length>90?'…':''}</div>
+    <div style="margin-top:10px;font-size:11px;color:var(--ink-faint);">📱 ${esc(m.whatsapp||m.telephone||'—')}</div>
+  </div>`;
+}
+
+function openMinistryForm(existing){
+  const m = existing || {};
+  openModal(`
+    <div class="modal-head"><h3>${existing?'Modifier le':'Nouveau'} ministère</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Nom du ministère</label><input id="f_nom" value="${esc(m.nom||'')}" placeholder="Ex: Ministère de la Jeunesse"></div>
+      <div class="grid2">
+        <div class="field"><label>Responsable</label><input id="f_responsable" value="${esc(m.responsable||'')}"></div>
+        <div class="field"><label>Date de création</label><input type="date" id="f_dateCreation" value="${m.dateCreation||''}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Téléphone</label><input id="f_telephone" value="${esc(m.telephone||'')}"></div>
+        <div class="field"><label>WhatsApp</label><input id="f_whatsapp" value="${esc(m.whatsapp||'')}"></div>
+      </div>
+      <div class="field"><label>Email du responsable (= identifiant de connexion)</label><input type="email" id="f_email" value="${esc(m.email||'')}" ${existing?'readonly style="opacity:.6;"':''}></div>
+      <div class="field"><label>Description</label><textarea id="f_description">${esc(m.description||'')}</textarea></div>
+      <div class="field"><label>Objectifs</label><textarea id="f_objectifs">${esc(m.objectifs||'')}</textarea></div>
+      <div class="field"><label>Verset biblique</label><input id="f_verset" value="${esc(m.verset||'')}" placeholder="Ex: Matthieu 28:19-20"></div>
+      <div class="field"><label>Couleur d'identification</label>
+        <div style="display:flex;gap:8px;">${MINISTRY_COLORS.map(c=>`<div onclick="document.getElementById('f_couleur').value='${c}';document.querySelectorAll('.color-dot').forEach(d=>d.style.outline='none');event.currentTarget.style.outline='2px solid #fff';" class="color-dot" style="width:26px;height:26px;border-radius:50%;background:${c};cursor:pointer;${ (m.couleur||MINISTRY_COLORS[0])===c?'outline:2px solid #fff;':''}"></div>`).join('')}</div>
+        <input type="hidden" id="f_couleur" value="${m.couleur||MINISTRY_COLORS[0]}">
+      </div>
+      ${!existing?`<div class="helper">Un compte de connexion (email + mot de passe généré) sera créé automatiquement pour ce responsable.</div>`:''}
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-gold" onclick="saveMinistry(${existing?`'${m.id}'`:'null'})">Enregistrer</button>
+    </div>
+  `);
+}
+
+async function saveMinistry(existingId){
+  const data = {
+    nom: document.getElementById('f_nom').value.trim(),
+    responsable: document.getElementById('f_responsable').value.trim(),
+    dateCreation: document.getElementById('f_dateCreation').value,
+    telephone: document.getElementById('f_telephone').value.trim(),
+    whatsapp: document.getElementById('f_whatsapp').value.trim(),
+    email: document.getElementById('f_email').value.trim(),
+    description: document.getElementById('f_description').value.trim(),
+    objectifs: document.getElementById('f_objectifs').value.trim(),
+    verset: document.getElementById('f_verset').value.trim(),
+    couleur: document.getElementById('f_couleur').value,
+  };
+  if(!data.nom || !data.email){ toast('Le nom et l\'email sont obligatoires.','err'); return; }
+
+  if(existingId){
+    await R('ministeres/'+existingId).update(data);
+    logAction('Modification ministère', data.nom);
+    toast('Ministère mis à jour.','ok');
+    closeModal();
+    render_ministeres();
+    return;
+  }
+
+  // Création + compte responsable via instance Firebase secondaire (pour ne pas déconnecter l'admin)
+  const slug = slugify(data.nom);
+  const password = genPassword();
+  const secondaryApp = firebase.apps.find(a=>a.name==='secondary') || firebase.initializeApp(firebaseConfig,'secondary');
+  const secondaryAuth = secondaryApp.auth();
+  try{
+    const cred = await secondaryAuth.createUserWithEmailAndPassword(data.email, password);
+    const newUid = cred.user.uid;
+    await secondaryAuth.signOut();
+    const minRef = R('ministeres').push();
+    await minRef.set({...data, slug, statut:'actif', createdAt: Date.now()});
+    await R('users/'+newUid).set({
+      role:'responsable', nom:data.responsable, email:data.email, ministereId:minRef.key, statut:'actif', createdAt: Date.now()
+    });
+    logAction('Création ministère', data.nom);
+    closeModal();
+    openModal(`
+      <div class="modal-head"><h3>✅ Ministère créé</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+      <div class="modal-body">
+        <p style="color:var(--ink-dim);font-size:13.5px;">Le compte du responsable a été généré :</p>
+        <div class="panel" style="margin-top:10px;">
+          <div style="font-size:12px;color:var(--ink-faint);">Identifiant</div>
+          <div style="font-size:15px;color:var(--gold-bright);margin-bottom:10px;">${esc(data.email)}</div>
+          <div style="font-size:12px;color:var(--ink-faint);">Mot de passe temporaire</div>
+          <div style="font-size:15px;color:var(--gold-bright);">${password}</div>
+        </div>
+        <div class="helper">Communiquez ces identifiants au responsable. Conseillez-lui de changer son mot de passe à la première connexion.</div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-gold" onclick="closeModal();render_ministeres();">Compris</button></div>
+    `);
+  }catch(err){
+    let msg = "Erreur lors de la création du compte.";
+    if(err.code==='auth/email-already-in-use') msg="Cet email est déjà utilisé par un autre compte.";
+    if(err.code==='auth/weak-password') msg="Mot de passe généré trop faible (réessayez).";
+    if(err.code==='auth/invalid-email') msg="Email invalide.";
+    toast(msg,'err');
+  }
+}
+
+async function openMinistryDetail(id){
+  const snap = await R('ministeres/'+id).once('value');
+  const m = {id, ...snap.val()};
+  openModal(`
+    <div class="modal-head"><h3>${esc(m.nom)}</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Responsable :</b> ${esc(m.responsable||'—')}</p>
+      <p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Email :</b> ${esc(m.email||'—')}</p>
+      <p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Téléphone / WhatsApp :</b> ${esc(m.telephone||'—')} / ${esc(m.whatsapp||'—')}</p>
+      <p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Créé le :</b> ${fmtDate(m.dateCreation)}</p>
+      <hr class="sep">
+      <p style="color:var(--ink-dim);font-size:13px;">${esc(m.description||'Aucune description.')}</p>
+      ${m.objectifs?`<p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Objectifs :</b> ${esc(m.objectifs)}</p>`:''}
+      ${m.verset?`<p style="color:var(--gold-bright);font-size:13px;font-style:italic;">"${esc(m.verset)}"</p>`:''}
+    </div>
+    <div class="modal-foot">
+      ${isAdmin()?`
+        <button class="btn btn-ghost" onclick="resetMinistryPassword('${m.email}')">Réinitialiser mot de passe</button>
+        <button class="btn btn-danger" onclick="suspendMinistry('${m.id}','${m.statut||'actif'}')">${m.statut==='suspendu'?'Réactiver':'Suspendre'}</button>
+        <button class="btn btn-gold" onclick="closeModal();openMinistryForm(${JSON.stringify(m).replace(/"/g,'&quot;')})">Modifier</button>
+      `:''}
+    </div>
+  `);
+}
+
+async function resetMinistryPassword(email){
+  try{
+    await auth.sendPasswordResetEmail(email);
+    toast('Email de réinitialisation envoyé à '+email,'ok');
+  }catch(e){ toast('Erreur : '+e.message,'err'); }
+}
+async function suspendMinistry(id, currentStatut){
+  const newStatut = currentStatut==='suspendu' ? 'actif' : 'suspendu';
+  await R('ministeres/'+id).update({statut:newStatut});
+  const usersSnap = await R('users').orderByChild('ministereId').equalTo(id).once('value');
+  usersSnap.forEach(c=> c.ref.update({statut:newStatut}));
+  logAction(newStatut==='suspendu'?'Suspension ministère':'Réactivation ministère', id);
+  toast(newStatut==='suspendu'?'Ministère suspendu.':'Ministère réactivé.','ok');
+  closeModal();
+  render_ministeres();
+}
+
+/* ====================== ACTIVITÉS ====================== */
+const TYPES_ACTIVITE = ['Evangélisation','Réunion','Camp','Jeûne','Convention','Formation','Conférence','Répétition','Visite','Action sociale','Collecte','Prière','Autre'];
+
+async function render_activites(){
+  const el = document.getElementById('contentArea');
+  el.innerHTML = '<div class="empty-state"><p>Chargement…</p></div>';
+  const [actSnap, minSnap] = await Promise.all([R('activites').once('value'), R('ministeres').once('value')]);
+  let list = []; actSnap.forEach(c=>list.push({id:c.key,...c.val()}));
+  let ministeres = {}; minSnap.forEach(c=>ministeres[c.key]=c.val());
+  if(!canSeeAll()) list = list.filter(a=>a.ministereId===myMinistereId());
+  list.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  window._activitesCache = list; window._ministeresCache = ministeres;
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+      <div class="tag-row" id="actFilterRow">
+        <span class="tag-filter active" data-f="tous" onclick="filterActivites('tous')">Toutes</span>
+        <span class="tag-filter" data-f="planifiee" onclick="filterActivites('planifiee')">Planifiées</span>
+        <span class="tag-filter" data-f="terminee" onclick="filterActivites('terminee')">Réalisées</span>
+        <span class="tag-filter" data-f="reportee" onclick="filterActivites('reportee')">Reportées</span>
+        <span class="tag-filter" data-f="annulee" onclick="filterActivites('annulee')">Annulées</span>
+      </div>
+      ${(isResponsable())?`<button class="btn btn-gold" onclick="openActivityForm()">+ Nouvelle activité</button>`:''}
+    </div>
+    <div id="activitesTableWrap"></div>
+  `;
+  renderActivitesTable(list, ministeres);
+}
+
+function filterActivites(f){
+  document.querySelectorAll('#actFilterRow .tag-filter').forEach(t=>t.classList.toggle('active', t.dataset.f===f));
+  const list = f==='tous' ? window._activitesCache : window._activitesCache.filter(a=>a.statut===f);
+  renderActivitesTable(list, window._ministeresCache);
+}
+
+function renderActivitesTable(list, ministeres){
+  const wrap = document.getElementById('activitesTableWrap');
+  if(!list.length){ wrap.innerHTML = `<div class="empty-state"><div class="ic">📋</div><p>Aucune activité.</p></div>`; return; }
+  wrap.innerHTML = `<div class="panel"><div class="table-wrap"><table><thead><tr>
+    <th>Titre</th>${canSeeAll()?'<th>Ministère</th>':''}<th>Type</th><th>Date</th><th>Lieu</th><th>Budget</th><th>Statut</th><th></th>
+  </tr></thead><tbody>
+    ${list.map(a=>`<tr style="cursor:pointer;" onclick="openActivityDetail('${a.id}')">
+      <td><b style="color:var(--ink);">${esc(a.titre)}</b></td>
+      ${canSeeAll()?`<td>${esc((ministeres[a.ministereId]||{}).nom||'—')}</td>`:''}
+      <td>${esc(a.type)}</td>
+      <td>${fmtDate(a.date)}</td>
+      <td>${esc(a.lieu||'—')}</td>
+      <td>${fmtMoney(a.montantDemande)}</td>
+      <td>${statutBadge(a.statut)}</td>
+      <td>›</td>
+    </tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+
+function openActivityForm(existing){
+  const a = existing || {};
+  openModal(`
+    <div class="modal-head"><h3>${existing?'Modifier l\'':'Nouvelle '}activité</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Titre</label><input id="f_titre" value="${esc(a.titre||'')}"></div>
+      <div class="field"><label>Description</label><textarea id="f_description">${esc(a.description||'')}</textarea></div>
+      <div class="field"><label>Objectif</label><textarea id="f_objectif">${esc(a.objectif||'')}</textarea></div>
+      <div class="grid2">
+        <div class="field"><label>Type d'activité</label><select id="f_type">${TYPES_ACTIVITE.map(t=>`<option ${a.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+        <div class="field"><label>Niveau de priorité</label><select id="f_priorite">
+          <option value="normale" ${a.priorite==='normale'?'selected':''}>Normale</option>
+          <option value="haute" ${a.priorite==='haute'?'selected':''}>Haute</option>
+          <option value="urgente" ${a.priorite==='urgente'?'selected':''}>Urgente</option>
+        </select></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Date</label><input type="date" id="f_date" value="${a.date||''}"></div>
+        <div class="field"><label>Heure</label><input type="time" id="f_heure" value="${a.heure||''}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Lieu</label><input id="f_lieu" value="${esc(a.lieu||'')}"></div>
+        <div class="field"><label>Responsable</label><input id="f_responsableActivite" value="${esc(a.responsableActivite||currentProfile.nom||'')}"></div>
+      </div>
+      <div class="field"><label>Participants prévus</label><input type="number" id="f_participantsPrevus" value="${a.participantsPrevus||''}"></div>
+      <div class="grid2">
+        <div class="field"><label>Montant disponible (G)</label><input type="number" id="f_montantDisponible" value="${a.montantDisponible||''}"></div>
+        <div class="field"><label>Montant demandé (G)</label><input type="number" id="f_montantDemande" value="${a.montantDemande||''}"></div>
+      </div>
+      <div class="field"><label>Matériels nécessaires</label><textarea id="f_materiels">${esc(a.materiels||'')}</textarea></div>
+      <div class="field"><label>Programme</label><textarea id="f_programme">${esc(a.programme||'')}</textarea></div>
+      <div class="field"><label>Commentaires</label><textarea id="f_commentaires">${esc(a.commentaires||'')}</textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-gold" onclick="saveActivity(${existing?`'${a.id}'`:'null'})">Enregistrer</button>
+    </div>
+  `);
+}
+
+async function saveActivity(existingId){
+  const data = {
+    titre: document.getElementById('f_titre').value.trim(),
+    description: document.getElementById('f_description').value.trim(),
+    objectif: document.getElementById('f_objectif').value.trim(),
+    type: document.getElementById('f_type').value,
+    priorite: document.getElementById('f_priorite').value,
+    date: document.getElementById('f_date').value,
+    heure: document.getElementById('f_heure').value,
+    lieu: document.getElementById('f_lieu').value.trim(),
+    responsableActivite: document.getElementById('f_responsableActivite').value.trim(),
+    participantsPrevus: document.getElementById('f_participantsPrevus').value,
+    montantDisponible: document.getElementById('f_montantDisponible').value,
+    montantDemande: document.getElementById('f_montantDemande').value,
+    materiels: document.getElementById('f_materiels').value.trim(),
+    programme: document.getElementById('f_programme').value.trim(),
+    commentaires: document.getElementById('f_commentaires').value.trim(),
+  };
+  if(!data.titre || !data.date){ toast('Titre et date sont obligatoires.','err'); return; }
+
+  if(existingId){
+    await R('activites/'+existingId).update(data);
+    logAction('Modification activité', data.titre);
+    toast('Activité mise à jour.','ok');
+  } else {
+    data.ministereId = myMinistereId();
+    data.statut = 'planifiee';
+    data.createdBy = currentProfile.nom;
+    data.createdAt = Date.now();
+    await R('activites').push(data);
+    logAction('Nouvelle activité', data.titre);
+    queueWhatsApp('Administration & Pasteur', '', `Nouvelle activité "${data.titre}" créée par ${currentProfile.nom} pour le ${fmtDate(data.date)}. Consultez PAEDS pour plus de détails.`, 'activite');
+    toast('Activité créée.','ok');
+  }
+  closeModal();
+  render_activites();
+}
+
+async function openActivityDetail(id){
+  const snap = await R('activites/'+id).once('value');
+  const a = {id, ...snap.val()};
+  const ministere = (window._ministeresCache||{})[a.ministereId] || {};
+  const isMine = a.ministereId === myMinistereId();
+  openModal(`
+    <div class="modal-head"><h3>${esc(a.titre)}</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">${statutBadge(a.statut)}<span class="badge badge-gold">${esc(a.type)}</span>${canSeeAll()?`<span class="badge badge-mute">${esc(ministere.nom||'')}</span>`:''}</div>
+      <p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Date :</b> ${fmtDate(a.date)} ${a.heure?'à '+a.heure:''} · <b style="color:var(--ink);">Lieu :</b> ${esc(a.lieu||'—')}</p>
+      <p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Responsable :</b> ${esc(a.responsableActivite||'—')}</p>
+      ${a.description?`<p style="color:var(--ink-dim);font-size:13px;">${esc(a.description)}</p>`:''}
+      ${a.objectif?`<p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Objectif :</b> ${esc(a.objectif)}</p>`:''}
+      <hr class="sep">
+      <p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Budget :</b> demandé ${fmtMoney(a.montantDemande)} / disponible ${fmtMoney(a.montantDisponible)}</p>
+      ${a.materiels?`<p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Matériels :</b> ${esc(a.materiels)}</p>`:''}
+      ${a.commentaires?`<p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Commentaires :</b> ${esc(a.commentaires)}</p>`:''}
+    </div>
+    <div class="modal-foot" style="flex-wrap:wrap;">
+      ${isMine ? `<button class="btn btn-ghost btn-sm" onclick="closeModal();openActivityForm(${JSON.stringify(a).replace(/"/g,'&quot;')})">Modifier</button>` : ''}
+      ${isMine && a.statut!=='terminee' && a.statut!=='annulee' ? `<button class="btn btn-ghost btn-sm" onclick="changeActivityStatus('${a.id}')">Statut</button>` : ''}
+      ${isMine ? `<button class="btn btn-ghost btn-sm" onclick="closeModal();openFinancingForm('${a.id}')">Demande de financement</button>` : ''}
+      ${isMine && a.statut==='terminee' ? `<button class="btn btn-ghost btn-sm" onclick="closeModal();openReportForm('${a.id}')">Rédiger rapport</button>` : ''}
+      <button class="btn btn-gold btn-sm" onclick="closeModal()">Fermer</button>
+    </div>
+  `);
+}
+
+function changeActivityStatus(id){
+  openModal(`
+    <div class="modal-head"><h3>Changer le statut</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Nouveau statut</label>
+        <select id="f_newStatut">
+          <option value="planifiee">Planifiée</option>
+          <option value="en_cours">En cours</option>
+          <option value="terminee">Terminée</option>
+          <option value="reportee">Reportée</option>
+          <option value="annulee">Annulée</option>
+        </select>
+      </div>
+      <div class="field"><label>Explication (si reportée/annulée)</label><textarea id="f_explication" placeholder="Motif…"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-gold" onclick="confirmStatusChange('${id}')">Confirmer</button>
+    </div>
+  `);
+}
+async function confirmStatusChange(id){
+  const statut = document.getElementById('f_newStatut').value;
+  const explication = document.getElementById('f_explication').value.trim();
+  await R('activites/'+id).update({statut, explicationStatut: explication});
+  logAction('Changement de statut activité', statut);
+  toast('Statut mis à jour.','ok');
+  closeModal();
+  render_activites();
+}
+/* ====================== FINANCEMENTS ====================== */
+async function openFinancingForm(activityId){
+  const snap = await R('activites/'+activityId).once('value');
+  const a = {id: activityId, ...snap.val()};
+  openModal(`
+    <div class="modal-head"><h3>Demande de financement</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Activité</label><input value="${esc(a.titre)}" readonly style="opacity:.7;"></div>
+      <div class="field"><label>Montant demandé (G)</label><input type="number" id="f_finMontant" value="${a.montantDemande||''}"></div>
+      <div class="field"><label>Motif</label><textarea id="f_finMotif" placeholder="Expliquez l'usage des fonds demandés…">${esc(a.objectif||'')}</textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-gold" onclick="submitFinancingRequest('${a.id}')">Générer la demande</button>
+    </div>
+  `);
+}
+async function submitFinancingRequest(activityId){
+  const montant = document.getElementById('f_finMontant').value;
+  const motif = document.getElementById('f_finMotif').value.trim();
+  const actSnap = await R('activites/'+activityId).once('value');
+  const a = actSnap.val();
+  const minSnap = await R('ministeres/'+a.ministereId).once('value');
+  const m = minSnap.val();
+  const data = {
+    activiteId: activityId, activiteTitre: a.titre, ministereId: a.ministereId, ministereNom: m.nom,
+    montant, motif, statut:'en_attente', demandeur: currentProfile.nom, date: new Date().toISOString().slice(0,10), createdAt: Date.now()
+  };
+  await R('financements').push(data);
+  logAction('Demande de financement', a.titre+' — '+fmtMoney(montant));
+  queueWhatsApp('Comité Exécutif / Pasteur', '', `Demande de financement : ${m.nom} sollicite ${fmtMoney(montant)} pour "${a.titre}". Consultez PAEDS pour approuver.`, 'financement');
+  toast('Demande de financement envoyée au Comité Exécutif.','ok');
+  closeModal();
+  navTo('financements');
+}
+
+async function render_financements(){
+  const el = document.getElementById('contentArea');
+  el.innerHTML = '<div class="empty-state"><p>Chargement…</p></div>';
+  const snap = await R('financements').once('value');
+  let list = []; snap.forEach(c=>list.push({id:c.key,...c.val()}));
+  if(!canSeeAll()) list = list.filter(f=>f.ministereId===myMinistereId());
+  list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+
+  el.innerHTML = `<div class="panel"><div class="table-wrap"><table><thead><tr>
+    <th>Activité</th>${canSeeAll()?'<th>Ministère</th>':''}<th>Montant</th><th>Date</th><th>Statut</th><th></th>
+  </tr></thead><tbody>
+    ${list.length ? list.map(f=>`<tr>
+      <td><b style="color:var(--ink);">${esc(f.activiteTitre)}</b></td>
+      ${canSeeAll()?`<td>${esc(f.ministereNom)}</td>`:''}
+      <td>${fmtMoney(f.montant)}</td>
+      <td>${fmtDate(f.date)}</td>
+      <td>${statutBadge(f.statut)}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-ghost btn-sm" onclick="printFinancingMemo('${f.id}')">📄 Mémo</button>
+        ${isPasteur() && f.statut==='en_attente' ? `<button class="btn btn-ghost btn-sm" onclick="decideFinancing('${f.id}','approuve')">✓</button><button class="btn btn-ghost btn-sm" onclick="decideFinancing('${f.id}','refuse')">✗</button>` : ''}
+      </td>
+    </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state"><div class="ic">💰</div><p>Aucune demande de financement.</p></div></td></tr>`}
+  </tbody></table></div></div>`;
+}
+
+async function decideFinancing(id, decision){
+  await R('financements/'+id).update({statut:decision, decisionPar: currentProfile.nom, decisionDate: Date.now()});
+  logAction(decision==='approuve'?'Financement approuvé':'Financement refusé', id);
+  const snap = await R('financements/'+id).once('value');
+  const f = snap.val();
+  const minSnap = await R('ministeres/'+f.ministereId).once('value');
+  const m = minSnap.val();
+  const label = decision==='approuve' ? 'approuvée ✅' : 'refusée ❌';
+  queueWhatsApp(m?m.nom:'Ministère', m?(m.whatsapp||m.telephone):'', `Votre demande de financement pour "${f.activiteTitre}" a été ${label} par le Pasteur.`, 'decision_financement');
+  toast(decision==='approuve'?'Demande approuvée.':'Demande refusée.','ok');
+  render_financements();
+}
+
+async function printFinancingMemo(id){
+  const snap = await R('financements/'+id).once('value');
+  const f = snap.val();
+  const html = `
+    <div style="font-family:Georgia,serif;max-width:680px;margin:0 auto;">
+      <div style="text-align:center;border-bottom:2px solid #d4af37;padding-bottom:14px;margin-bottom:24px;">
+        <h2 style="margin:0;">Église de Dieu Salem de Jérémie</h2>
+        <div style="font-size:12px;color:#555;">Plateforme Administrative — PAEDS</div>
+      </div>
+      <p><b>À :</b> Comité Exécutif</p>
+      <p><b>De :</b> ${esc(f.ministereNom)}</p>
+      <p><b>Date :</b> ${fmtDate(f.date)}</p>
+      <p><b>Objet :</b> Demande de soutien financier</p>
+      <hr>
+      <p>Le ${esc(f.ministereNom)} sollicite une aide financière pour la réalisation de l'activité intitulée <b>« ${esc(f.activiteTitre)} »</b>.</p>
+      <p><b>Montant demandé :</b> ${fmtMoney(f.montant)}</p>
+      <p><b>Motif :</b><br>${esc(f.motif).replace(/\n/g,'<br>')}</p>
+      <br><br>
+      <p>Demandeur : ${esc(f.demandeur)}</p>
+      <p style="margin-top:50px;">Signature : ______________________</p>
+    </div>
+  `;
+  document.getElementById('printArea').innerHTML = html;
+  window.print();
+}
+function downloadAsWord(elementHtml, filename){
+  const blob = new Blob(['\ufeff', `<html><head><meta charset="utf-8"></head><body>${elementHtml}</body></html>`], {type:'application/msword'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename + '.doc';
+  link.click();
+}
+/* ====================== RAPPORTS ====================== */
+async function openReportForm(activityId){
+  const snap = await R('activites/'+activityId).once('value');
+  const a = {id: activityId, ...snap.val()};
+  const isEvangelisation = a.type === 'Evangélisation';
+  openModal(`
+    <div class="modal-head"><h3>Nouveau rapport — ${esc(a.titre)}</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div class="grid2">
+        <div class="field"><label>Date</label><input type="date" id="f_repDate" value="${a.date||''}"></div>
+        <div class="field"><label>Lieu</label><input id="f_repLieu" value="${esc(a.lieu||'')}"></div>
+      </div>
+      <div class="field"><label>Objectifs</label><textarea id="f_repObjectifs">${esc(a.objectif||'')}</textarea></div>
+      <div class="field"><label>Résumé</label><textarea id="f_repResume" placeholder="Résumé du déroulement de l'activité…"></textarea></div>
+      <div class="field"><label>Résultats</label><textarea id="f_repResultats"></textarea></div>
+      <div class="field"><label>Difficultés rencontrées</label><textarea id="f_repDifficultes"></textarea></div>
+      <div class="field"><label>Recommandations</label><textarea id="f_repRecommandations"></textarea></div>
+      <div class="field"><label>Leçons apprises</label><textarea id="f_repLecons"></textarea></div>
+      <hr class="sep">
+      <div class="grid2">
+        <div class="field"><label>Budget prévu (G)</label><input type="number" id="f_repBudgetPrevu" value="${a.montantDemande||''}"></div>
+        <div class="field"><label>Budget utilisé (G)</label><input type="number" id="f_repBudgetUtilise"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Entrées (G)</label><input type="number" id="f_repEntrees" value="0"></div>
+        <div class="field"><label>Sorties (G)</label><input type="number" id="f_repSorties" value="0"></div>
+      </div>
+      ${isEvangelisation?`
+      <hr class="sep">
+      <div class="panel" style="background:rgba(212,175,55,.06);border-color:rgba(212,175,55,.3);">
+        <div class="panel-head"><h3 style="color:var(--gold-bright);">Cas spécial — Évangélisation</h3></div>
+        <div class="grid2">
+          <div class="field"><label>Personnes rencontrées</label><input type="number" id="f_evRencontrees" value="0"></div>
+          <div class="field"><label>Personnes évangélisées</label><input type="number" id="f_evEvangelisees" value="0"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Nombre de conversions</label><input type="number" id="f_evConversions" value="0"></div>
+          <div class="field"><label>Personnes restaurées</label><input type="number" id="f_evRestaurees" value="0"></div>
+        </div>
+        <div class="field"><label>Liste des conversions (un nom par ligne)</label><textarea id="f_evListeConversions" placeholder="Nom Prénom — téléphone"></textarea></div>
+        <div class="field"><label>Décisions prises</label><textarea id="f_evDecisions"></textarea></div>
+        <div class="field"><label>Suivi prévu</label><textarea id="f_evSuivi"></textarea></div>
+        <div class="field"><label>Observations</label><textarea id="f_evObservations"></textarea></div>
+      </div>
+      `:''}
+      <hr class="sep">
+      <div class="field"><label>Liste de présence (un par ligne : Nom, Téléphone, Présent/Absent)</label><textarea id="f_repPresence" placeholder="Jean Pierre, 3712-3456, Présent"></textarea></div>
+      <div class="helper">Format libre, séparé par virgules. Vous pouvez aussi coller depuis Excel.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-gold" onclick="saveReport('${a.id}', ${isEvangelisation})">Soumettre le rapport</button>
+    </div>
+  `);
+}
+
+async function saveReport(activityId, isEvangelisation){
+  const actSnap = await R('activites/'+activityId).once('value');
+  const a = actSnap.val();
+  const presenceLines = document.getElementById('f_repPresence').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+    const parts = l.split(',').map(p=>p.trim());
+    return {nom:parts[0]||'', telephone:parts[1]||'', statut:parts[2]||'Présent'};
+  });
+  const data = {
+    activiteId: activityId, nom: a.titre, ministereId: a.ministereId,
+    date: document.getElementById('f_repDate').value, lieu: document.getElementById('f_repLieu').value.trim(),
+    objectifs: document.getElementById('f_repObjectifs').value.trim(),
+    resume: document.getElementById('f_repResume').value.trim(),
+    resultats: document.getElementById('f_repResultats').value.trim(),
+    difficultes: document.getElementById('f_repDifficultes').value.trim(),
+    recommandations: document.getElementById('f_repRecommandations').value.trim(),
+    lecons: document.getElementById('f_repLecons').value.trim(),
+    budgetPrevu: document.getElementById('f_repBudgetPrevu').value,
+    budgetUtilise: document.getElementById('f_repBudgetUtilise').value,
+    entrees: document.getElementById('f_repEntrees').value,
+    sorties: document.getElementById('f_repSorties').value,
+    presence: presenceLines,
+    statut:'soumis', soumisPar: currentProfile.nom, createdAt: Date.now()
+  };
+  if(isEvangelisation){
+    data.evangelisation = {
+      rencontrees: document.getElementById('f_evRencontrees').value,
+      evangelisees: document.getElementById('f_evEvangelisees').value,
+      conversions: document.getElementById('f_evConversions').value,
+      restaurees: document.getElementById('f_evRestaurees').value,
+      listeConversions: document.getElementById('f_evListeConversions').value.trim(),
+      decisions: document.getElementById('f_evDecisions').value.trim(),
+      suivi: document.getElementById('f_evSuivi').value.trim(),
+      observations: document.getElementById('f_evObservations').value.trim(),
+    };
+  }
+  await R('rapports').push(data);
+  logAction('Rapport soumis', a.titre);
+  queueWhatsApp('Pasteur', '', `Nouveau rapport soumis pour "${a.titre}" par ${currentProfile.nom}. En attente de votre approbation sur PAEDS.`, 'rapport');
+  toast('Rapport soumis pour approbation.','ok');
+  closeModal();
+  navTo('rapports');
+}
+
+async function render_rapports(){
+  const el = document.getElementById('contentArea');
+  el.innerHTML = '<div class="empty-state"><p>Chargement…</p></div>';
+  const snap = await R('rapports').once('value');
+  let list = []; snap.forEach(c=>list.push({id:c.key,...c.val()}));
+  if(!canSeeAll()) list = list.filter(r=>r.ministereId===myMinistereId());
+  list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+
+  el.innerHTML = `<div class="panel"><div class="table-wrap"><table><thead><tr>
+    <th>Activité</th><th>Date</th><th>Budget utilisé</th><th>Statut</th><th></th>
+  </tr></thead><tbody>
+    ${list.length ? list.map(r=>`<tr style="cursor:pointer;" onclick="openReportDetail('${r.id}')">
+      <td><b style="color:var(--ink);">${esc(r.nom)}</b></td>
+      <td>${fmtDate(r.date)}</td>
+      <td>${fmtMoney(r.budgetUtilise)}</td>
+      <td>${statutBadge(r.statut)}</td>
+      <td>›</td>
+    </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state"><div class="ic">📄</div><p>Aucun rapport.</p></div></td></tr>`}
+  </tbody></table></div></div>`;
+}
+
+async function openReportDetail(id){
+  const snap = await R('rapports/'+id).once('value');
+  const r = {id, ...snap.val()};
+  const ev = r.evangelisation;
+  openModal(`
+    <div class="modal-head"><h3>${esc(r.nom)}</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div style="margin-bottom:10px;">${statutBadge(r.statut)}</div>
+      <p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Date :</b> ${fmtDate(r.date)} · <b style="color:var(--ink);">Lieu :</b> ${esc(r.lieu||'—')}</p>
+      <p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Résumé :</b> ${esc(r.resume||'—')}</p>
+      <p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Résultats :</b> ${esc(r.resultats||'—')}</p>
+      <p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Difficultés :</b> ${esc(r.difficultes||'—')}</p>
+      <p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Recommandations :</b> ${esc(r.recommandations||'—')}</p>
+      <hr class="sep">
+      <p style="color:var(--ink-dim);font-size:13px;"><b style="color:var(--ink);">Budget :</b> prévu ${fmtMoney(r.budgetPrevu)} / utilisé ${fmtMoney(r.budgetUtilise)} — Entrées ${fmtMoney(r.entrees)} / Sorties ${fmtMoney(r.sorties)}</p>
+      ${ev?`
+      <hr class="sep">
+      <div class="panel" style="background:rgba(212,175,55,.06);border-color:rgba(212,175,55,.3);">
+        <div class="panel-head"><h3 style="color:var(--gold-bright);">Évangélisation</h3></div>
+        <p style="font-size:13px;color:var(--ink-dim);">Rencontrées : ${ev.rencontrees||0} · Évangélisées : ${ev.evangelisees||0} · Conversions : ${ev.conversions||0} · Restaurées : ${ev.restaurees||0}</p>
+        ${ev.listeConversions?`<p style="font-size:13px;color:var(--ink-dim);"><b style="color:var(--ink);">Conversions :</b><br>${esc(ev.listeConversions).replace(/\n/g,'<br>')}</p>`:''}
+        ${ev.suivi?`<p style="font-size:13px;color:var(--ink-dim);"><b style="color:var(--ink);">Suivi :</b> ${esc(ev.suivi)}</p>`:''}
+      </div>`:''}
+      ${r.presence && r.presence.length?`
+      <hr class="sep">
+      <div class="panel-head"><h3>Liste de présence (${r.presence.length})</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Nom</th><th>Téléphone</th><th>Statut</th></tr></thead><tbody>
+        ${r.presence.map(p=>`<tr><td>${esc(p.nom)}</td><td>${esc(p.telephone)}</td><td>${esc(p.statut)}</td></tr>`).join('')}
+      </tbody></table></div>`:''}
+    </div>
+    <div class="modal-foot" style="flex-wrap:wrap;">
+      ${isPasteur() && r.statut==='soumis' ? `
+        <button class="btn btn-ghost btn-sm" onclick="decideReport('${r.id}','retourne')">Retourner</button>
+        <button class="btn btn-danger btn-sm" onclick="decideReport('${r.id}','refuse')">Refuser</button>
+        <button class="btn btn-gold btn-sm" onclick="decideReport('${r.id}','approuve')">Approuver</button>
+      `:''}
+      ${r.statut==='approuve'?`<span class="badge badge-ok">✅ Approuvé par le Pasteur</span>`:''}
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">Fermer</button>
+    </div>
+  `);
+}
+async function decideReport(id, decision){
+  await R('rapports/'+id).update({statut:decision, decisionPar:currentProfile.nom, decisionDate:Date.now()});
+  logAction('Décision rapport: '+decision, id);
+  const snap = await R('rapports/'+id).once('value');
+  const r = snap.val();
+  const minSnap = await R('ministeres/'+r.ministereId).once('value');
+  const m = minSnap.val();
+  const labels = {approuve:'approuvé ✅', refuse:'refusé ❌', retourne:'retourné pour correction ↩️'};
+  queueWhatsApp(m?m.nom:'Ministère', m?(m.whatsapp||m.telephone):'', `Votre rapport "${r.nom}" a été ${labels[decision]||decision} par le Pasteur.`, 'decision_rapport');
+  toast('Rapport mis à jour.','ok');
+  closeModal();
+  render_rapports();
+}
+/* ====================== MEMBRES & COMITÉS ====================== */
+async function render_membres(){
+  const el = document.getElementById('contentArea');
+  el.innerHTML = '<div class="empty-state"><p>Chargement…</p></div>';
+  const snap = await R('membres').once('value');
+  let list = []; snap.forEach(c=>list.push({id:c.key,...c.val()}));
+  if(!canSeeAll()) list = list.filter(m=>m.ministereId===myMinistereId());
+  const membres = list.filter(m=>m.categorie==='membre');
+  const comite = list.filter(m=>m.categorie==='comite');
+  window._membresCache = list;
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:16px;">
+      ${isResponsable() || isAdmin() ? `<button class="btn btn-ghost" onclick="openMemberForm('comite')">+ Membre du comité</button>
+      <button class="btn btn-gold" onclick="openMemberForm('membre')">+ Membre</button>` : ''}
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Comité (${comite.length})</h3></div>
+      ${comite.length ? `<div class="table-wrap"><table><thead><tr><th>Nom</th><th>Fonction</th><th>Début</th><th>Fin</th><th>Statut mandat</th><th></th></tr></thead><tbody>
+        ${comite.map(c=>memberRowHtml(c)).join('')}
+      </tbody></table></div>` : `<div class="empty-state"><p>Aucun membre de comité enregistré.</p></div>`}
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Membres (${membres.length})</h3></div>
+      ${membres.length ? `<div class="table-wrap"><table><thead><tr><th>Nom</th><th>Téléphone</th><th>Date d'entrée</th><th>Statut</th><th></th></tr></thead><tbody>
+        ${membres.map(m=>`<tr><td><b style="color:var(--ink);">${esc(m.prenom)} ${esc(m.nom)}</b></td><td>${esc(m.telephone||'—')}</td><td>${fmtDate(m.dateEntree)}</td><td>${statutBadge(m.statut)}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick='openMemberForm("membre", ${JSON.stringify(m).replace(/'/g,"&#39;")})'>Modifier</button></td></tr>`).join('')}
+      </tbody></table></div>` : `<div class="empty-state"><p>Aucun membre enregistré.</p></div>`}
+    </div>
+  `;
+}
+
+function memberRowHtml(c){
+  const today = new Date(); today.setHours(0,0,0,0);
+  let mandatBadge = '<span class="badge badge-mute">—</span>';
+  if(c.dateFin){
+    const fin = new Date(c.dateFin);
+    const joursRestants = Math.round((fin-today)/86400000);
+    if(joursRestants < 0) mandatBadge = `<span class="badge badge-danger">Expiré</span>`;
+    else if(joursRestants <= 30) mandatBadge = `<span class="badge badge-warn">${joursRestants} j restants</span>`;
+    else mandatBadge = `<span class="badge badge-ok">Actif</span>`;
+  }
+  return `<tr><td><b style="color:var(--ink);">${esc(c.prenom)} ${esc(c.nom)}</b></td><td>${esc(c.fonction||'—')}</td><td>${fmtDate(c.dateDebut)}</td><td>${fmtDate(c.dateFin)}</td><td>${mandatBadge}</td>
+  <td><button class="btn btn-ghost btn-sm" onclick='openMemberForm("comite", ${JSON.stringify(c).replace(/'/g,"&#39;")})'>Modifier</button></td></tr>`;
+}
+
+function openMemberForm(categorie, existing){
+  const m = existing || {};
+  const isComite = categorie==='comite';
+  openModal(`
+    <div class="modal-head"><h3>${existing?'Modifier':'Nouveau'} ${isComite?'membre de comité':'membre'}</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div class="grid2">
+        <div class="field"><label>Prénom</label><input id="f_mPrenom" value="${esc(m.prenom||'')}"></div>
+        <div class="field"><label>Nom</label><input id="f_mNom" value="${esc(m.nom||'')}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Téléphone</label><input id="f_mTelephone" value="${esc(m.telephone||'')}"></div>
+        <div class="field"><label>Adresse</label><input id="f_mAdresse" value="${esc(m.adresse||'')}"></div>
+      </div>
+      ${isComite?`
+      <div class="field"><label>Fonction</label><select id="f_mFonction">
+        ${['Président','Vice-président','Secrétaire','Trésorier','Conseiller'].map(f=>`<option ${m.fonction===f?'selected':''}>${f}</option>`).join('')}
+      </select></div>
+      <div class="grid2">
+        <div class="field"><label>Date de début</label><input type="date" id="f_mDebut" value="${m.dateDebut||''}"></div>
+        <div class="field"><label>Date de fin</label><input type="date" id="f_mFin" value="${m.dateFin||''}"></div>
+      </div>
+      `:`
+      <div class="grid2">
+        <div class="field"><label>Date d'entrée</label><input type="date" id="f_mEntree" value="${m.dateEntree||''}"></div>
+        <div class="field"><label>Statut</label><select id="f_mStatut">
+          ${['actif','passif','suspendu','decede','transfere'].map(s=>`<option value="${s}" ${m.statut===s?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
+        </select></div>
+      </div>
+      `}
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-gold" onclick="saveMember('${categorie}', ${existing?`'${m.id}'`:'null'})">Enregistrer</button>
+    </div>
+  `);
+}
+
+async function saveMember(categorie, existingId){
+  const isComite = categorie==='comite';
+  const data = {
+    categorie, prenom: document.getElementById('f_mPrenom').value.trim(), nom: document.getElementById('f_mNom').value.trim(),
+    telephone: document.getElementById('f_mTelephone').value.trim(), adresse: document.getElementById('f_mAdresse').value.trim(),
+  };
+  if(isComite){
+    data.fonction = document.getElementById('f_mFonction').value;
+    data.dateDebut = document.getElementById('f_mDebut').value;
+    data.dateFin = document.getElementById('f_mFin').value;
+  } else {
+    data.dateEntree = document.getElementById('f_mEntree').value;
+    data.statut = document.getElementById('f_mStatut').value;
+  }
+  if(!data.nom){ toast('Le nom est obligatoire.','err'); return; }
+
+  if(existingId){
+    await R('membres/'+existingId).update(data);
+  } else {
+    data.ministereId = myMinistereId() || 'admin';
+    data.createdAt = Date.now();
+    await R('membres').push(data);
+  }
+  logAction(existingId?'Modification membre':'Nouveau membre', data.nom);
+  toast('Enregistré.','ok');
+  closeModal();
+  render_membres();
+}
+/* ====================== CALENDRIER ANNUEL ====================== */
+let calendarYear = new Date().getFullYear();
+async function render_calendrier(){
+  const el = document.getElementById('contentArea');
+  el.innerHTML = '<div class="empty-state"><p>Chargement…</p></div>';
+  const snap = await R('activites').once('value');
+  let list = []; snap.forEach(c=>list.push({id:c.key,...c.val()}));
+  if(!canSeeAll()) list = list.filter(a=>a.ministereId===myMinistereId());
+  window._calActivites = list;
+  renderCalendarGrid();
+}
+function changeCalendarYear(delta){ calendarYear += delta; renderCalendarGrid(); }
+function renderCalendarGrid(){
+  const el = document.getElementById('contentArea');
+  const list = window._calActivites || [];
+  const moisNoms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  let monthsHtml = '';
+  for(let mIdx=0; mIdx<12; mIdx++){
+    const monthActs = list.filter(a=>{ if(!a.date) return false; const d=new Date(a.date); return d.getFullYear()===calendarYear && d.getMonth()===mIdx; });
+    monthActs.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    monthsHtml += `<div class="panel" style="margin-bottom:0;">
+      <div class="panel-head"><h3>${moisNoms[mIdx]}</h3><span class="panel-sub">${monthActs.length}</span></div>
+      ${monthActs.length ? monthActs.map(a=>`<div style="padding:7px 0;border-bottom:1px solid var(--navy-border);font-size:12.5px;display:flex;justify-content:space-between;gap:8px;">
+        <span style="color:var(--ink-dim);">${new Date(a.date).getDate()} — ${esc(a.titre)}</span>${statutBadge(a.statut)}
+      </div>`).join('') : `<div style="color:var(--ink-faint);font-size:12px;padding:10px 0;">Aucune activité</div>`}
+    </div>`;
+  }
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+      <button class="btn btn-ghost btn-sm" onclick="changeCalendarYear(-1)">‹</button>
+      <h3 style="margin:0;font-size:18px;">${calendarYear}</h3>
+      <button class="btn btn-ghost btn-sm" onclick="changeCalendarYear(1)">›</button>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="window.print()">🖨 Imprimer</button>
+    </div>
+    <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">${monthsHtml}</div>
+  `;
+}
+
+/* ====================== PUBLICATIONS ====================== */
+async function render_publications(){
+  const el = document.getElementById('contentArea');
+  el.innerHTML = '<div class="empty-state"><p>Chargement…</p></div>';
+  const snap = await R('publications').once('value');
+  let list = []; snap.forEach(c=>list.push({id:c.key,...c.val()}));
+  list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+      ${(isAdmin()||isPasteur())?`<button class="btn btn-gold" onclick="openPublicationForm()">+ Nouvelle publication</button>`:''}
+    </div>
+    ${list.length ? list.map(p=>publicationCardHtml(p)).join('') : `<div class="empty-state"><div class="ic">📢</div><p>Aucune publication.</p></div>`}
+  `;
+}
+function publicationCardHtml(p){
+  const vu = p.vuPar && p.vuPar[currentUser.uid];
+  return `<div class="panel" onclick="markPublicationSeen('${p.id}')" style="cursor:pointer;">
+    <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;">
+      <div>
+        <span class="badge badge-gold">${esc(p.type||'Communiqué')}</span>
+        <h3 style="margin:8px 0 4px;font-size:15.5px;">${esc(p.titre)}</h3>
+        <div style="font-size:11.5px;color:var(--ink-faint);">${fmtDate(p.date)} · par ${esc(p.auteur||'—')}</div>
+      </div>
+      ${!vu?'<span class="badge badge-warn">Nouveau</span>':''}
+    </div>
+    <p style="color:var(--ink-dim);font-size:13px;margin-top:10px;">${esc(p.contenu||'')}</p>
+  </div>`;
+}
+function openPublicationForm(){
+  openModal(`
+    <div class="modal-head"><h3>Nouvelle publication</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Titre</label><input id="f_pubTitre"></div>
+      <div class="field"><label>Type</label><select id="f_pubType">${['Décision','Communiqué','Calendrier','Ordre du jour','Document','Rapport','Note pastorale'].map(t=>`<option>${t}</option>`).join('')}</select></div>
+      <div class="field"><label>Contenu</label><textarea id="f_pubContenu" style="min-height:120px;"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-gold" onclick="savePublication()">Publier</button>
+    </div>
+  `);
+}
+async function savePublication(){
+  const titre = document.getElementById('f_pubTitre').value.trim();
+  if(!titre){ toast('Le titre est obligatoire.','err'); return; }
+  await R('publications').push({
+    titre, type: document.getElementById('f_pubType').value, contenu: document.getElementById('f_pubContenu').value.trim(),
+    auteur: currentProfile.nom, date: new Date().toISOString().slice(0,10), createdAt: Date.now(), vuPar: {}
+  });
+  logAction('Publication', titre);
+  notifyAllMinisteres(`Nouvelle publication disponible sur PAEDS : "${titre}". Veuillez vous connecter pour la consulter.`, 'publication');
+  toast('Publication envoyée à tous les responsables.','ok');
+  closeModal();
+  render_publications();
+}
+async function notifyAllMinisteres(message, type){
+  const snap = await R('ministeres').once('value');
+  snap.forEach(c=>{
+    const m = c.val();
+    if(m.statut === 'suspendu') return;
+    queueWhatsApp(m.nom, m.whatsapp||m.telephone, message, type);
+  });
+}
+async function markPublicationSeen(id){
+  await R('publications/'+id+'/vuPar/'+currentUser.uid).set(Date.now());
+}
+
+/* ====================== RENCONTRES ====================== */
+async function render_rencontres(){
+  const el = document.getElementById('contentArea');
+  el.innerHTML = '<div class="empty-state"><p>Chargement…</p></div>';
+  const snap = await R('rencontres').once('value');
+  let list = []; snap.forEach(c=>list.push({id:c.key,...c.val()}));
+  list.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+      ${(isAdmin()||isPasteur())?`<button class="btn btn-gold" onclick="openMeetingForm()">+ Nouvelle rencontre</button>`:''}
+    </div>
+    ${list.length ? list.map(m=>meetingCardHtml(m)).join('') : `<div class="empty-state"><div class="ic">🤝</div><p>Aucune rencontre programmée.</p></div>`}
+  `;
+}
+function meetingCardHtml(m){
+  const myStatus = m.confirmations && m.confirmations[currentUser.uid];
+  return `<div class="panel">
+    <h3 style="margin:0 0 6px;font-size:15.5px;">${esc(m.titre)}</h3>
+    <div style="font-size:12.5px;color:var(--ink-faint);margin-bottom:10px;">${fmtDate(m.date)} ${m.heure?'à '+m.heure:''} · ${esc(m.lieu||'—')}</div>
+    ${m.objectif?`<p style="color:var(--ink-dim);font-size:13px;">${esc(m.objectif)}</p>`:''}
+    ${isResponsable()?`
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn ${myStatus==='Présent'?'btn-gold':'btn-ghost'} btn-sm" onclick="confirmMeeting('${m.id}','Présent')">Présent</button>
+      <button class="btn ${myStatus==='Absent'?'btn-gold':'btn-ghost'} btn-sm" onclick="confirmMeeting('${m.id}','Absent')">Absent</button>
+      <button class="btn ${myStatus==='Excusé'?'btn-gold':'btn-ghost'} btn-sm" onclick="confirmMeeting('${m.id}','Excusé')">Excusé</button>
+    </div>`:''}
+  </div>`;
+}
+function openMeetingForm(){
+  openModal(`
+    <div class="modal-head"><h3>Nouvelle rencontre</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Titre</label><input id="f_rTitre" placeholder="Ex: Réunion du Comité Exécutif"></div>
+      <div class="grid2">
+        <div class="field"><label>Date</label><input type="date" id="f_rDate"></div>
+        <div class="field"><label>Heure</label><input type="time" id="f_rHeure"></div>
+      </div>
+      <div class="field"><label>Lieu</label><input id="f_rLieu"></div>
+      <div class="field"><label>Objectif / Ordre du jour</label><textarea id="f_rObjectif"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-gold" onclick="saveMeeting()">Publier la rencontre</button>
+    </div>
+  `);
+}
+async function saveMeeting(){
+  const titre = document.getElementById('f_rTitre').value.trim();
+  if(!titre){ toast('Le titre est obligatoire.','err'); return; }
+  const date = document.getElementById('f_rDate').value;
+  await R('rencontres').push({
+    titre, date, heure: document.getElementById('f_rHeure').value,
+    lieu: document.getElementById('f_rLieu').value.trim(), objectif: document.getElementById('f_rObjectif').value.trim(),
+    confirmations: {}, createdAt: Date.now()
+  });
+  logAction('Nouvelle rencontre', titre);
+  notifyAllMinisteres(`Nouvelle rencontre programmée : "${titre}" le ${fmtDate(date)}. Merci de confirmer votre présence sur PAEDS.`, 'rencontre');
+  toast('Rencontre publiée.','ok');
+  closeModal();
+  render_rencontres();
+}
+async function confirmMeeting(id, statut){
+  await R('rencontres/'+id+'/confirmations/'+currentUser.uid).set(statut);
+  toast('Réponse enregistrée : '+statut,'ok');
+  render_rencontres();
+}
+
+/* ====================== JOURNAL D'AUDIT ====================== */
+async function render_journal(){
+  const el = document.getElementById('contentArea');
+  if(!isAdmin()){ el.innerHTML = '<div class="empty-state"><p>Accès réservé à l\'administrateur.</p></div>'; return; }
+  el.innerHTML = '<div class="empty-state"><p>Chargement…</p></div>';
+  const snap = await R('journal').limitToLast(200).once('value');
+  let list = []; snap.forEach(c=>list.push({id:c.key,...c.val()}));
+  list.reverse();
+  el.innerHTML = `<div class="panel"><div class="table-wrap"><table><thead><tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Détails</th></tr></thead><tbody>
+    ${list.length ? list.map(j=>`<tr><td>${fmtDateTime(new Date(j.ts).toISOString())}</td><td>${esc(j.nom)}</td><td>${esc(j.action)}</td><td>${esc(j.details||'')}</td></tr>`).join('') : `<tr><td colspan="4"><div class="empty-state"><p>Aucune entrée.</p></div></td></tr>`}
+  </tbody></table></div></div>`;
+}
+
+/* ====================== NOTIFICATIONS WHATSAPP (panneau admin) ====================== */
+async function render_notifications(){
+  const el = document.getElementById('contentArea');
+  if(!isAdmin()){ el.innerHTML = '<div class="empty-state"><p>Accès réservé à l\'administrateur.</p></div>'; return; }
+  el.innerHTML = '<div class="empty-state"><p>Chargement…</p></div>';
+
+  const [queueSnap, cfgSnap] = await Promise.all([
+    R('notifications_whatsapp').limitToLast(100).once('value'),
+    R('config/whatsappWebhookUrl').once('value')
+  ]);
+  let list = []; queueSnap.forEach(c=>list.push({id:c.key,...c.val()}));
+  list.reverse();
+  const webhookUrl = cfgSnap.val() || '';
+  const enAttente = list.filter(n=>n.statut==='en_attente');
+
+  el.innerHTML = `
+    <div class="panel">
+      <div class="panel-head"><h3>Automatisation (facultatif)</h3></div>
+      <p style="font-size:12.5px;color:var(--ink-dim);">Si vous configurez un webhook (Cloud Function, Make.com, Zapier…) relié à l'API WhatsApp Business, chaque message sera envoyé automatiquement. Sans webhook, les messages restent en file pour envoi manuel.</p>
+      <div class="field" style="margin-top:10px;"><label>URL du webhook</label><input id="f_webhookUrl" value="${esc(webhookUrl)}" placeholder="https://..."></div>
+      <button class="btn btn-gold btn-sm" onclick="saveWebhookUrl()">Enregistrer</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>File d'attente (${enAttente.length} en attente)</h3></div>
+      ${list.length ? `<div class="table-wrap"><table><thead><tr><th>Destinataire</th><th>Type</th><th>Message</th><th>Statut</th><th></th></tr></thead><tbody>
+        ${list.map(n=>`<tr>
+          <td><b style="color:var(--ink);">${esc(n.destinataireNom)}</b>${n.telephone?`<br><span style="font-size:11px;color:var(--ink-faint);">${esc(n.telephone)}</span>`:''}</td>
+          <td><span class="badge badge-mute">${esc(n.type||'—')}</span></td>
+          <td style="max-width:260px;font-size:12px;">${esc(n.message)}</td>
+          <td>${n.statut==='envoye_auto'?'<span class="badge badge-ok">Envoyé (auto)</span>':n.statut==='envoye'?'<span class="badge badge-ok">Envoyé</span>':'<span class="badge badge-warn">En attente</span>'}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-ghost btn-sm" onclick="copyWhatsAppMessage('${n.id}')">📋 Copier</button>
+            ${n.statut==='en_attente'?`<button class="btn btn-ghost btn-sm" onclick="markNotifSent('${n.id}')">✓ Envoyé</button>`:''}
+          </td>
+        </tr>`).join('')}
+      </tbody></table></div>` : `<div class="empty-state"><div class="ic">💬</div><p>Aucune notification pour le moment.</p></div>`}
+    </div>
+  `;
+  window._notifCache = list;
+}
+async function saveWebhookUrl(){
+  const url = document.getElementById('f_webhookUrl').value.trim();
+  await R('config/whatsappWebhookUrl').set(url);
+  logAction('Configuration webhook WhatsApp', url?'défini':'supprimé');
+  toast('Configuration enregistrée.','ok');
+}
+function copyWhatsAppMessage(id){
+  const n = (window._notifCache||[]).find(x=>x.id===id);
+  if(!n) return;
+  const text = n.telephone ? `${n.message}` : n.message;
+  navigator.clipboard.writeText(text).then(()=>toast('Message copié — collez-le dans WhatsApp.','ok')).catch(()=>toast('Impossible de copier automatiquement.','err'));
+}
+async function markNotifSent(id){
+  await R('notifications_whatsapp/'+id).update({statut:'envoye', envoyePar: currentProfile.nom, envoyeAt: Date.now()});
+  toast('Marqué comme envoyé.','ok');
+  render_notifications();
+}
+</script>
+</body>
+</html>
