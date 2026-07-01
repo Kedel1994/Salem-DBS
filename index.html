@@ -299,71 +299,23 @@ hr.sep{border:none;border-top:1px solid var(--navy-border);margin:16px 0;}
 <div class="toast-stack" id="toastStack"></div>
 <div id="printArea" class="print-only"></div>
 
-<div id="dbgPanel" style="position:fixed;left:0;right:0;bottom:0;max-height:38px;overflow-y:auto;background:#05070f;border-top:2px solid #d4af37;font-family:monospace;font-size:11px;color:#9aa3c0;z-index:99999;padding:0;display:none;transition:max-height .2s;">
-  <div id="dbgHeader" onclick="toggleDbgPanel()" style="position:sticky;top:0;background:#05070f;color:#f0cc5e;font-weight:bold;padding:8px 12px;border-bottom:1px solid #27315a;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
-    <span>🔍 Diagnostic PAEDS <span id="dbgCount" style="color:#6b7393;font-weight:normal;"></span></span>
-    <span id="dbgToggleIcon">▲ agrandir</span>
-  </div>
-  <div id="dbgLog" style="padding:8px 12px;display:none;"></div>
-</div>
-
 <script>
-/* ====================== DIAGNOSTIC PERMANENT — journal qui ne s'efface jamais ====================== */
+/* Journal technique silencieux (visible uniquement dans les outils développeur du navigateur) */
 function dbg(msg, isError){
-  const panel = document.getElementById('dbgPanel');
-  const log = document.getElementById('dbgLog');
-  const countEl = document.getElementById('dbgCount');
-  if(!panel || !log) return;
-  panel.style.display = 'block';
-  window._dbgCount = (window._dbgCount||0) + 1;
-  if(countEl) countEl.textContent = '(' + window._dbgCount + ')';
-  const t = new Date().toLocaleTimeString('fr-FR');
-  const line = document.createElement('div');
-  line.style.cssText = 'padding:3px 0;border-bottom:1px solid #1a2547;' + (isError?'color:#e0584f;':'color:#9aa3c0;');
-  line.textContent = `[${t}] ${msg}`;
-  log.appendChild(line);
-  if(window._dbgExpanded) panel.scrollTop = panel.scrollHeight;
-  // Reste réduit par défaut ; s'ouvre automatiquement seulement en cas d'erreur
-  if(isError && !window._dbgExpanded) toggleDbgPanel(true);
+  if(isError) console.error('[PAEDS]', msg);
 }
-window._dbgExpanded = false;
-function toggleDbgPanel(forceOpen){
-  const panel = document.getElementById('dbgPanel');
-  const log = document.getElementById('dbgLog');
-  const icon = document.getElementById('dbgToggleIcon');
-  const willExpand = forceOpen === true ? true : !window._dbgExpanded;
-  window._dbgExpanded = willExpand;
-  if(willExpand){
-    panel.style.maxHeight = '55vh';
-    log.style.display = 'block';
-    icon.textContent = '▼ réduire';
-    panel.scrollTop = panel.scrollHeight;
-  } else {
-    panel.style.maxHeight = '38px';
-    log.style.display = 'none';
-    icon.textContent = '▲ agrandir';
-  }
-}
-dbg('Script démarré.');
 window.addEventListener('error', function(e){
   dbg('ERREUR JS : ' + e.message + ' (' + (e.filename||'?').split('/').pop() + ':' + (e.lineno||'?') + ')', true);
 });
 window.addEventListener('unhandledrejection', function(e){
   dbg('ERREUR PROMESSE : ' + ((e.reason && e.reason.message) ? e.reason.message : JSON.stringify(e.reason)), true);
 });
-window._authFired = false;
 </script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script>
-dbg('Après balises <script> Firebase CDN.');
 /* ====================== FIREBASE INIT ====================== */
-if(typeof firebase === 'undefined'){
-  dbg('firebase est UNDEFINED — le SDK ne s\'est pas chargé (CDN bloqué ou pas de réseau).', true);
-} else {
-  dbg('SDK Firebase chargé avec succès.');
-}
 const firebaseConfig = {
   apiKey: "AIzaSyBjmJHuNe0GjblwBrP1Rakqr9HgZcfgYT8",
   authDomain: "salem-dbs.firebaseapp.com",
@@ -373,30 +325,11 @@ const firebaseConfig = {
   messagingSenderId: "1018849656489",
   appId: "1:1018849656489:web:283f7174c426a7302373b8"
 };
-try{
-  firebase.initializeApp(firebaseConfig);
-  dbg('firebase.initializeApp() OK.');
-}catch(e){ dbg('ERREUR initializeApp : ' + e.message, true); }
+firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
-dbg('auth et db créés.');
 const ROOT = "paeds"; // racine dédiée pour isoler PAEDS du reste du projet salem-dbs
 const R = (path) => db.ref(`${ROOT}/${path}`);
-
-// Test réseau direct, indépendant de Auth, pour vérifier l'accès à Firebase
-dbg('Test de connexion réseau vers Firebase Database…');
-const _testController = new AbortController();
-const _testTimeout = setTimeout(()=>_testController.abort(), 6000);
-fetch('https://salem-dbs-default-rtdb.firebaseio.com/.json?shallow=true', {signal:_testController.signal})
-  .then(r=>{ clearTimeout(_testTimeout); dbg('Database accessible — réponse HTTP ' + r.status + '.'); })
-  .catch(err=>{ clearTimeout(_testTimeout); dbg('Database INACCESSIBLE : ' + err.message, true); });
-
-// Diagnostic si onAuthStateChanged ne répond jamais après 10s
-setTimeout(function(){
-  if(!window._authFired){
-    dbg('⚠️ onAuthStateChanged n\'a toujours pas répondu après 10 secondes.', true);
-  }
-}, 10000);
 
 let currentUser = null;   // {uid, email}
 let currentProfile = null; // {role, nom, ministereId, ...}
@@ -473,22 +406,17 @@ async function checkMandateExpirations(){
 
 /* ====================== AUTH ====================== */
 auth.onAuthStateChanged(async (user)=>{
-  window._authFired = true;
-  dbg('onAuthStateChanged déclenché. Utilisateur : ' + (user ? user.email : 'aucun (déconnecté)'));
   document.getElementById('loadingScreen').style.display='none';
   if(user){
     currentUser = user;
     try{
-      dbg('Lecture du profil paeds/users/' + user.uid + '…');
       const snap = await R('users/'+user.uid).once('value');
-      dbg('Lecture profil terminée. Existe : ' + snap.exists());
       if(!snap.exists()){
         showAuthError("Compte non reconnu dans PAEDS. Contactez l'administrateur.");
         auth.signOut();
         return;
       }
       currentProfile = snap.val();
-      dbg('Profil chargé : rôle=' + currentProfile.role + ', statut=' + currentProfile.statut);
       if(currentProfile.statut === 'suspendu'){
         showAuthError("Ce compte a été suspendu. Contactez l'administrateur.");
         auth.signOut();
@@ -496,18 +424,15 @@ auth.onAuthStateChanged(async (user)=>{
       }
       document.getElementById('authScreen').style.display='none';
       document.getElementById('appShell').style.display='block';
-      dbg('Affichage de l\'application…');
       initAppShell();
-      dbg('initAppShell() terminé avec succès.');
     }catch(e){
-      dbg('ERREUR pendant le chargement du profil : ' + e.message, true);
+      dbg('Erreur chargement profil : ' + e.message, true);
       showAuthError("Erreur de connexion à la base de données : " + e.message);
     }
   } else {
     currentUser = null; currentProfile = null;
     document.getElementById('authScreen').style.display='flex';
     document.getElementById('appShell').style.display='none';
-    dbg('Écran de connexion affiché.');
   }
 });
 
@@ -521,13 +446,11 @@ function doLogin(){
   const errEl = document.getElementById('authError');
   errEl.style.display='none';
   if(!email || !pwd){ showAuthError("Veuillez remplir tous les champs."); return; }
-  dbg('Tentative de connexion : ' + email);
   const btn = document.getElementById('loginBtn');
   btn.textContent='Connexion…'; btn.disabled=true;
   auth.signInWithEmailAndPassword(email,pwd)
-    .then(()=>{ dbg('signInWithEmailAndPassword() résolu avec succès.'); })
     .catch(err=>{
-      dbg('ERREUR signInWithEmailAndPassword : ' + err.code + ' — ' + err.message, true);
+      dbg('Erreur connexion : ' + err.code + ' — ' + err.message, true);
       let msg = "Identifiants incorrects.";
       if(err.code==='auth/user-not-found') msg="Aucun compte avec cet email.";
       if(err.code==='auth/wrong-password') msg="Mot de passe incorrect.";
